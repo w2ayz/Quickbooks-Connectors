@@ -4,6 +4,11 @@ node_modules/
 .DS_Store
 .tokens.json
 
+# Cloudflare tunnel credentials — never commit
+*.json
+!package.json
+!package-lock.json
+
 # Openclaw — sensitive config, never commit
 .email-config
 *.email-config

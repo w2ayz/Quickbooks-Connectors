@@ -39,6 +39,11 @@ Then visit:
 | Endpoint | Description |
 |---|---|
 | `GET /auth/intuit` | Start OAuth flow |
+| `GET /auth/intuit/callback` | OAuth callback (handled automatically) |
+| `GET /auth/status` | Check authentication status & token expiry |
+| `GET /auth/intuit/refresh` | Manually refresh access token |
+| `GET /auth/intuit/revoke` | Revoke access (browser confirmation page) |
+| `POST /auth/intuit/revoke` | Revoke access (API call) |
 | `GET /customers` | List all customers |
 | `GET /transactions` | List all transactions |
 | `GET /customers/:id/transactions` | Transactions for a specific customer |
@@ -97,11 +102,13 @@ node scripts/log-action.js \
 
 #### 4. OAuth Tunnel — Use a Persistent HTTPS URL
 
-The original skill uses a temporary `trycloudflare.com` URL for production OAuth. In Openclaw
-running as a persistent background service, replace this with a stable HTTPS endpoint:
+For production OAuth, a public HTTPS URL is required (Intuit does not accept `http://localhost`
+in production). Use a Cloudflare named tunnel with a permanent subdomain:
 
-- **Recommended:** Cloudflare named tunnel with a permanent subdomain (e.g. `qb.yourdomain.com`)
-- Update `INTUIT_REDIRECT_URI` in Openclaw's environment config (not in `.env` committed to Git)
+- Create tunnel: `cloudflared tunnel create quickbooks-connector`
+- Route subdomain: `cloudflared tunnel route dns quickbooks-connector qb.yourdomain.com`
+- **Recommended:** Use a permanent subdomain (e.g. `qb.yourdomain.com`) — never a temporary URL
+- Update `INTUIT_REDIRECT_URI` in your local `.env` (not committed to Git)
 - Register the stable URL in the Intuit Developer portal under **Production → Redirect URIs**
 
 #### 5. Server Startup — Register as Openclaw Background Service
