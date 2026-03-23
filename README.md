@@ -48,3 +48,105 @@ Then visit:
 
 - **Sandbox:** uses `https://sandbox-quickbooks.api.intuit.com`
 - **Production:** uses `https://quickbooks.api.intuit.com`
+
+---
+
+## Openclaw Implementation
+
+This server is designed to be used as a background service by [Openclaw](https://openclaw.ai). The `client-lookup` skill bundled with this repo works out of the box in Claude Code, but requires the following modifications to run inside Openclaw.
+
+### What Openclaw Needs to Modify
+
+#### 1. Email Delivery — Use Openclaw's Native Email Skill
+
+The original `client-lookup` skill generates a CSV report and asks the user if they want to email it. In Claude Code this uses `nodemailer` with a Google Workspace SMTP connection.
+
+**In Openclaw**, replace the nodemailer step with Openclaw's built-in email skill:
+
+```
+# Instead of calling nodemailer directly, invoke:
+@email send --to <recipient> --subject "QuickBooks Report: <CustomerName>" --attachment <report_path>
+```
+
+- Openclaw's email skill handles authentication, SMTP config, and delivery natively
+- No SMTP credentials need to be embedded in the skill or committed to Git
+- Sender address is configured once in Openclaw's email skill settings — not in this repo
+
+#### 2. Email Addresses — Never Hardcode, Use Openclaw Config
+
+Email addresses (sender and default recipient) **must not be hardcoded** in the skill or committed to the repository. Instead:
+
+- Store them in Openclaw's workspace config or environment variables
+- Reference them as `{{EMAIL_SENDER}}` and `{{EMAIL_DEFAULT_RECIPIENT}}` in the skill
+- Example Openclaw config entry (keep this file out of Git):
+  ```
+  EMAIL_SENDER=your-sender@yourdomain.com
+  EMAIL_DEFAULT_RECIPIENT=your-recipient@yourdomain.com
+  ```
+
+#### 3. Log File Path — Adjust to Openclaw Workspace
+
+The skill writes action logs to a local Reports folder. In Openclaw, update the log path in
+`scripts/log-action.js` to use the Openclaw workspace path, or pass it via argument:
+
+```bash
+node scripts/log-action.js \
+  --logPath /Users/<you>/.openclaw/workspace/logs/client-lookup.log \
+  --query "..." ...
+```
+
+#### 4. OAuth Tunnel — Use a Persistent HTTPS URL
+
+The original skill uses a temporary `trycloudflare.com` URL for production OAuth. In Openclaw
+running as a persistent background service, replace this with a stable HTTPS endpoint:
+
+- **Recommended:** Cloudflare named tunnel with a permanent subdomain (e.g. `qb.yourdomain.com`)
+- Update `INTUIT_REDIRECT_URI` in Openclaw's environment config (not in `.env` committed to Git)
+- Register the stable URL in the Intuit Developer portal under **Production → Redirect URIs**
+
+#### 5. Server Startup — Register as Openclaw Background Service
+
+Instead of manually running `node index.js`, register the server as an Openclaw background service
+so it starts automatically:
+
+```yaml
+# openclaw-service.yaml  ← keep this file out of Git
+name: quickbooks-connector
+command: node /path/to/Quickbooks/index.js
+restart: always
+env_file: /path/to/Quickbooks/.env
+```
+
+---
+
+### What Does NOT Need to Change
+
+| Component | Status |
+|---|---|
+| OAuth flow (`/auth/intuit`) | ✅ Works as-is |
+| Token auto-refresh (every 55 min) | ✅ Works as-is |
+| Token persistence (`.tokens.json`) | ✅ Works as-is |
+| Customer & transaction endpoints | ✅ Works as-is |
+| CSV generation & Reports folder | ✅ Works as-is |
+| `log-action.js` script | ✅ Works as-is (path configurable) |
+| Revoke endpoint | ✅ Works as-is |
+
+---
+
+### Sensitive Files — Never Commit to Git
+
+The following are already in `.gitignore` and must **never** be committed:
+
+| File | Contains |
+|---|---|
+| `.env` | Client ID, Client Secret, Redirect URI |
+| `.tokens.json` | Live OAuth access & refresh tokens |
+| `*.csv` | Customer financial data |
+| `.email-config` | Sender/recipient email addresses |
+| `openclaw-service.yaml` | Service paths and config |
+
+To verify nothing sensitive is staged before every commit:
+```bash
+git diff --cached --name-only
+git status
+```

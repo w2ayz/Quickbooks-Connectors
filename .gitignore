@@ -2,3 +2,11 @@ node_modules/
 .env
 *.csv
 .DS_Store
+.tokens.json
+
+# Openclaw — sensitive config, never commit
+.email-config
+*.email-config
+openclaw-service.yaml
+openclaw*.yaml
+.openclaw-env
