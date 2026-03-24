@@ -46,6 +46,24 @@ function buildReadable(entry) {
   ].join('\n');
 }
 
+// Rotate a log file if it exceeds maxBytes. Keeps up to maxFiles archives.
+function rotateIfNeeded(filePath, maxBytes = 1 * 1024 * 1024, maxFiles = 5) {
+  if (!fs.existsSync(filePath)) return;
+  const { size } = fs.statSync(filePath);
+  if (size < maxBytes) return;
+
+  // Shift old archives: .4 → delete, .3 → .4, ..., .1 → .2, current → .1
+  for (let i = maxFiles - 1; i >= 1; i--) {
+    const older = `${filePath}.${i}`;
+    const newer = `${filePath}.${i + 1}`;
+    if (fs.existsSync(older)) {
+      if (i === maxFiles - 1) fs.unlinkSync(older);
+      else fs.renameSync(older, newer);
+    }
+  }
+  fs.renameSync(filePath, `${filePath}.1`);
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
 
@@ -69,6 +87,10 @@ function main() {
 
   fs.mkdirSync(path.dirname(logPath), { recursive: true });
   fs.mkdirSync(path.dirname(readablePath), { recursive: true });
+
+  // Rotate logs if over 1 MB (keeps up to 5 archives)
+  rotateIfNeeded(logPath);
+  rotateIfNeeded(readablePath);
 
   // machine-readable JSONL
   fs.appendFileSync(logPath, JSON.stringify(entry) + '\n', 'utf8');
