@@ -269,16 +269,21 @@ Rules for optional fields:
 
 Ask exactly once:
 
-`Do you want me to send this to victor@newdreamservices.com?`
+`Do you want me to send this to ${DEFAULT_EMAIL_TO}?`
 
-- If user says **yes** (or equivalent) → send to `victor@newdreamservices.com`. Do not ask for an address.
+- If user says **yes** (or equivalent) → send to `${DEFAULT_EMAIL_TO}`. Do not ask for an address.
 - If user says **no** → skip, log `email_skipped`.
 - If user explicitly provides a different address → use that instead.
-- Use sender address `victor@ever-alpha.com` and himalaya account `everalpha` for all outbound emails.
+- Use sender address `${EMAIL_FROM}` and himalaya account `${HIMALAYA_ACCOUNT}` for all outbound emails.
+
+> **Config (set once in your environment or update these placeholders):**
+> - `DEFAULT_EMAIL_TO` = recipient's default email address
+> - `EMAIL_FROM` = sender email address tied to the himalaya account
+> - `HIMALAYA_ACCOUNT` = himalaya account name (e.g. `everalpha`)
 
 **Email send command** — use `himalaya template send` (NOT `message send`) with MML syntax to attach the CSV file:
 ```bash
-printf 'From: victor@ever-alpha.com\nTo: <RECIPIENT>\nSubject: QuickBooks Report: <CUSTOMER_NAME>\n\nPlease find the QuickBooks report for <CUSTOMER_NAME> attached.\n\n<#part filename="<REPORT_PATH>" type="text/csv">\n<#/part>\n' | himalaya template send -a everalpha
+printf 'From: ${EMAIL_FROM}\nTo: ${DEFAULT_EMAIL_TO}\nSubject: QuickBooks Report: <CUSTOMER_NAME>\n\nPlease find the QuickBooks report for <CUSTOMER_NAME> attached.\n\n<#part filename="<REPORT_PATH>" type="text/csv">\n<#/part>\n' | himalaya template send -a ${HIMALAYA_ACCOUNT}
 ```
 
 > **Important:** `message send` does NOT support attachments. Always use `template send` with MML `<#part>` syntax for file attachments. CRLF line endings are not needed with `template send`.

@@ -204,7 +204,7 @@ Exit codes for `client-lookup.js`:
 | 2026-03-24 | Simplified email prompt: ask yes/no with default address pre-filled, no address input required |
 | 2026-03-24 | Removed hardcoded realmId from SKILL.md example response |
 | 2026-03-24 | No-match response now instructs standard name format **Lastname, Givenname** instead of listing all customers |
-| 2026-03-24 | Email prompt simplified: asks yes/no with `victor@newdreamservices.com` pre-filled, no address input required |
+| 2026-03-24 | Email prompt simplified: asks yes/no with default address pre-filled, no address input required |
 | 2026-03-24 | Added CreditMemo to `/customers/:id/transactions` and `/customers/:id/transactions/export` endpoints |
 | 2026-03-24 | Added JournalEntry to `/customers/:id/transactions` and export — filtered client-side by EntityRef in line items |
 | 2026-03-24 | CSV report now includes `PostingType` and `Memo` columns for JournalEntry rows |
