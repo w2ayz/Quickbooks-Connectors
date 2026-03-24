@@ -168,9 +168,9 @@ openclaw approvals get
 
 **c) Slack `groupPolicy` must be restored to `open`**
 
-`openclaw doctor` resets the Slack channel's `groupPolicy` to `"allowlist"` with no channels listed. This causes Solo to silently ignore all Slack channel messages — the bot stays connected and shows `OK` in status, but never responds.
+`openclaw doctor` resets the Slack channel's `groupPolicy` to `"allowlist"` with no channels listed. This causes the agent to silently ignore all Slack channel messages — the bot stays connected and shows `OK` in status, but never responds.
 
-Symptom: Messages in Slack show no response from Solo, or "Slack couldn't send this message".
+Symptom: Messages in Slack show no response from the agent, or "Slack couldn't send this message".
 
 Fix — update the `channels.slack` block in `~/.openclaw/openclaw.json`:
 ```json
@@ -194,7 +194,7 @@ openclaw status | grep Slack
 
 `openclaw doctor` resets `commands.nativeSkills` to `"auto"`. With `"auto"`, the agent must call the `read` tool to load the skill file before executing — but `gpt-5.3-codex` skips this step and only sends an acknowledgment, never actually running the skill.
 
-Symptom: Solo says "I'm on it / Running it now" but never delivers results or asks about emailing.
+Symptom: The agent says "I'm on it / Running it now" but never delivers results or asks about emailing.
 
 Fix — in `~/.openclaw/openclaw.json`:
 ```json
@@ -216,16 +216,9 @@ rm ~/.openclaw/agents/main/sessions/<channel-session-id>.jsonl
 
 Then restart the gateway.
 
-**e) WhatsApp channel — stays disabled**
+**e) Verify only required channels are enabled**
 
-`openclaw doctor` may re-enable channels. Confirm WhatsApp remains off in `~/.openclaw/openclaw.json`:
-```json
-"channels": {
-  "whatsapp": { "enabled": false }
-}
-```
-If the runtime is not installed and the channel is enabled, every agent response will fail with:
-`WhatsApp plugin runtime is unavailable: missing light-runtime-api for plugin 'whatsapp'`
+`openclaw doctor` may re-enable channels that were previously disabled. After running doctor, check `~/.openclaw/openclaw.json` and confirm only the channels you actively use are set to `"enabled": true`. Disabled channel plugins that are re-enabled without their runtime installed will cause every agent response to fail.
 
 ---
 
@@ -275,3 +268,13 @@ To verify nothing sensitive is staged before every commit:
 git diff --cached --name-only
 git status
 ```
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---|---|---|
+| **v1.2** | 2026-03-24 | Remove agent-name and platform-specific references from docs; replace with generic language. Add JournalEntry and CreditMemo to `/customers/:id/transactions` and export endpoint. CSV report updated with `Date`, `Type`, `No.`, `Amount`, `Status` columns matching QB web UI. No-match response now instructs standard name format `Lastname, Givenname`. Email prompt simplified to yes/no with default address pre-filled. Added log rotation to `log-action.js` (1 MB limit, 5 archives). Added `.claude/` to `.gitignore`. |
+| **v1.1** | 2026-03-24 | Dual-port security: port 3000 localhost-only (no token), port 3001 public via Cloudflare tunnel (requires `ADMIN_TOKEN`). Added `requireAdminToken` middleware. |
+| **v1.0** | 2026-03-24 | Initial stable release. OAuth 2.0 with auto token rotation, customer and transaction endpoints, CSV export, Openclaw integration guide, security hardening. |
