@@ -111,7 +111,75 @@ in production). Use a Cloudflare named tunnel with a permanent subdomain:
 - Update `INTUIT_REDIRECT_URI` in your local `.env` (not committed to Git)
 - Register the stable URL in the Intuit Developer portal under **Production → Redirect URIs**
 
-#### 5. Server Startup — Register as Openclaw Background Service
+#### 5. After Running `openclaw doctor` — Restore Stripped Settings
+
+`openclaw doctor` rewrites `~/.openclaw/openclaw.json` to a minimal safe state. This removes several settings required for the QuickBooks connector and `client-lookup` skill to function. After every `openclaw doctor` run, verify and restore the following:
+
+**a) Gateway mode must be set to `local`**
+
+`openclaw doctor` removes `gateway.mode`, which blocks the gateway from starting.
+
+Check the error log:
+```bash
+cat ~/.openclaw/logs/gateway.err.log | tail -5
+# If you see: "Gateway start blocked: set gateway.mode=local (current: unset)"
+```
+
+Fix — add `"mode": "local"` inside the `gateway` block in `~/.openclaw/openclaw.json`:
+```json
+"gateway": {
+  "mode": "local",
+  "auth": {
+    "mode": "token",
+    "token": "<your-token>"
+  }
+}
+```
+
+Then restart the gateway:
+```bash
+launchctl bootout gui/$(id -u)/ai.openclaw.gateway
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+```
+
+Verify recovery:
+```bash
+openclaw gateway status | grep "RPC probe"
+# Expected: RPC probe: ok
+```
+
+**b) Exec approvals must be re-granted for `node` and `curl`**
+
+`openclaw doctor` clears exec approvals. Without them, the `client-lookup` skill stalls silently after the agent says "I'm on it..." — it cannot execute Node.js scripts or make curl requests.
+
+Re-add the approvals:
+```bash
+openclaw approvals allowlist add "/opt/homebrew/opt/node/bin/node"
+openclaw approvals allowlist add "node"
+openclaw approvals allowlist add "/usr/bin/curl"
+openclaw approvals allowlist add "curl"
+```
+
+Verify:
+```bash
+openclaw approvals get
+# Should show 4 entries under Allowlist
+```
+
+**c) WhatsApp channel — stays disabled**
+
+`openclaw doctor` may re-enable channels. Confirm WhatsApp remains off in `~/.openclaw/openclaw.json`:
+```json
+"channels": {
+  "whatsapp": { "enabled": false }
+}
+```
+If the runtime is not installed and the channel is enabled, every agent response will fail with:
+`WhatsApp plugin runtime is unavailable: missing light-runtime-api for plugin 'whatsapp'`
+
+---
+
+#### 6. Server Startup — Register as Openclaw Background Service
 
 Instead of manually running `node index.js`, register the server as an Openclaw background service
 so it starts automatically:
