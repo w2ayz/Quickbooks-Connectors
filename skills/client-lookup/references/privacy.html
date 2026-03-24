@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy – QuickBooks Connector</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 800px; margin: 60px auto; padding: 0 24px; color: #222; line-height: 1.7; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #0077C5; padding-bottom: 12px; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; color: #0077C5; }
+    p, li { font-size: 0.97rem; }
+    footer { margin-top: 60px; font-size: 0.85rem; color: #888; border-top: 1px solid #eee; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p><strong>Application:</strong> QuickBooks Connector<br/>
+     <strong>Effective Date:</strong> March 21, 2026<br/>
+     <strong>Last Updated:</strong> March 21, 2026</p>
+
+  <p>This Privacy Policy describes how the QuickBooks Connector ("Application", "we", "us") handles information when you use our service to connect to and retrieve data from QuickBooks Online.</p>
+
+  <h2>1. Information We Access</h2>
+  <p>When you authorize the Application via QuickBooks OAuth 2.0, we access the following data from your QuickBooks Online account:</p>
+  <ul>
+    <li><strong>Customer data:</strong> names, company names, email addresses, phone numbers, account balances, and notes</li>
+    <li><strong>Transaction data:</strong> invoices, payments, purchases/expenses, and bills associated with your account</li>
+    <li><strong>OAuth tokens:</strong> access tokens and refresh tokens provided by Intuit to authenticate API requests</li>
+  </ul>
+
+  <h2>2. How We Use Your Information</h2>
+  <p>Data accessed through the Application is used exclusively to:</p>
+  <ul>
+    <li>Display customer and transaction information in response to your requests</li>
+    <li>Generate CSV export files at your direction</li>
+    <li>Maintain your authenticated session with the QuickBooks API</li>
+  </ul>
+  <p>We do not use your data for advertising, profiling, or any purpose beyond the core functionality described above.</p>
+
+  <h2>3. Data Storage</h2>
+  <p>The Application stores data <strong>in memory only</strong> during your active session:</p>
+  <ul>
+    <li>OAuth access tokens and refresh tokens are held in server memory and are never written to disk or a database</li>
+    <li>Customer and transaction data retrieved from QuickBooks is not cached or persisted beyond your session</li>
+    <li>CSV files generated at your request are saved locally to your machine only — they are not uploaded or transmitted anywhere</li>
+  </ul>
+  <p>When the server is restarted, all session data including tokens is cleared.</p>
+
+  <h2>4. Data Sharing</h2>
+  <p>We do not sell, rent, or share your QuickBooks data with any third parties. Data accessed through this Application is not transmitted to any external servers other than Intuit's official QuickBooks API endpoints.</p>
+
+  <h2>5. Third-Party Services</h2>
+  <p>The Application communicates exclusively with Intuit's QuickBooks Online API (<code>quickbooks.api.intuit.com</code> or <code>sandbox-quickbooks.api.intuit.com</code>). Your use of QuickBooks Online is governed by <a href="https://quickbooks.intuit.com/global/terms-of-service/" target="_blank">Intuit's Privacy Policy</a> and Terms of Service.</p>
+
+  <h2>6. Security</h2>
+  <p>We implement the following measures to protect your information:</p>
+  <ul>
+    <li>OAuth 2.0 with CSRF state validation for secure authorization</li>
+    <li>No persistent storage of credentials or financial data</li>
+    <li>API keys and secrets are stored in environment variables, not in source code</li>
+    <li>The <code>.env</code> file is excluded from version control via <code>.gitignore</code></li>
+  </ul>
+
+  <h2>7. Your Rights</h2>
+  <p>You may revoke the Application's access to your QuickBooks account at any time by:</p>
+  <ul>
+    <li>Visiting your <a href="https://accounts.intuit.com/app/account-manager/security" target="_blank">Intuit Account Security settings</a></li>
+    <li>Revoking the connected app's permissions under "Connected Services"</li>
+  </ul>
+
+  <h2>8. Children's Privacy</h2>
+  <p>This Application is intended for business use by adults only. We do not knowingly collect information from anyone under the age of 18.</p>
+
+  <h2>9. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. Changes will be reflected by the "Last Updated" date at the top of this page. Continued use of the Application after changes constitutes your acceptance of the updated policy.</p>
+
+  <h2>10. Contact</h2>
+  <p>If you have any questions or concerns about this Privacy Policy, please contact the developer through the GitHub repository associated with this Application.</p>
+
+  <footer>
+    &copy; 2026 QuickBooks Connector. All rights reserved.
+  </footer>
+</body>
+</html>
