@@ -166,7 +166,31 @@ openclaw approvals get
 # Should show 4 entries under Allowlist
 ```
 
-**c) WhatsApp channel — stays disabled**
+**c) Slack `groupPolicy` must be restored to `open`**
+
+`openclaw doctor` resets the Slack channel's `groupPolicy` to `"allowlist"` with no channels listed. This causes Solo to silently ignore all Slack channel messages — the bot stays connected and shows `OK` in status, but never responds.
+
+Symptom: Messages in Slack show no response from Solo, or "Slack couldn't send this message".
+
+Fix — update the `channels.slack` block in `~/.openclaw/openclaw.json`:
+```json
+"channels": {
+  "slack": {
+    "groupPolicy": "open",
+    "dmPolicy": "open",
+    "allowFrom": ["*"],
+    ...
+  }
+}
+```
+
+Then restart the gateway (same command as above). Verify:
+```bash
+openclaw status | grep Slack
+# Expected: Slack │ ON │ OK
+```
+
+**d) WhatsApp channel — stays disabled**
 
 `openclaw doctor` may re-enable channels. Confirm WhatsApp remains off in `~/.openclaw/openclaw.json`:
 ```json
