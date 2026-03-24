@@ -113,7 +113,7 @@ in production). Use a Cloudflare named tunnel with a permanent subdomain:
 
 #### 5. After Running `openclaw doctor` — Restore Stripped Settings
 
-`openclaw doctor` rewrites `~/.openclaw/openclaw.json` to a minimal safe state. This removes several settings required for the QuickBooks connector and `client-lookup` skill to function. After every `openclaw doctor` run, verify and restore the following:
+`openclaw doctor` rewrites `~/.openclaw/openclaw.json` to a minimal safe state. This removes several settings required for the QuickBooks connector and `client-lookup` skill to function. After every `openclaw doctor` run, verify and restore **all** of the following:
 
 **a) Gateway mode must be set to `local`**
 
@@ -190,7 +190,33 @@ openclaw status | grep Slack
 # Expected: Slack │ ON │ OK
 ```
 
-**d) WhatsApp channel — stays disabled**
+**d) `nativeSkills` must be set to `true`**
+
+`openclaw doctor` resets `commands.nativeSkills` to `"auto"`. With `"auto"`, the agent must call the `read` tool to load the skill file before executing — but `gpt-5.3-codex` skips this step and only sends an acknowledgment, never actually running the skill.
+
+Symptom: Solo says "I'm on it / Running it now" but never delivers results or asks about emailing.
+
+Fix — in `~/.openclaw/openclaw.json`:
+```json
+"commands": {
+  "native": "auto",
+  "nativeSkills": true,
+  ...
+}
+```
+
+With `nativeSkills: true`, the full skill content is injected directly into the agent's system prompt — no `read` tool call needed, and the agent runs the exec command immediately.
+
+After changing, also delete the stale channel session so it starts fresh:
+```bash
+# Find and remove the quickbooks channel session file
+ls ~/.openclaw/agents/main/sessions/*.jsonl
+rm ~/.openclaw/agents/main/sessions/<channel-session-id>.jsonl
+```
+
+Then restart the gateway.
+
+**e) WhatsApp channel — stays disabled**
 
 `openclaw doctor` may re-enable channels. Confirm WhatsApp remains off in `~/.openclaw/openclaw.json`:
 ```json
