@@ -36,6 +36,14 @@ MEMORY.md
 memory/
 .clawhub/
 
+# ── OpenClaw workspace identity files (internal, not for public repo) ─────────
+AGENTS.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
 # ── Scratch / temp ────────────────────────────────────────────────────────────
 tmp/
 *.txt
