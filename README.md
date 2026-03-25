@@ -1,14 +1,19 @@
 # QuickBooks Connectors
 
-A lightweight Node.js + Express server that connects to the QuickBooks Online API via OAuth 2.0 to retrieve customers and transactions.
+A lightweight Node.js + Express server that connects to the QuickBooks Online API via OAuth 2.0 to retrieve customers and transactions — integrated with Slack and OpenClaw for instant lookups, CSV exports, and email delivery.
+
+**Current version: 1.3**
 
 ## Features
 
-- OAuth 2.0 authentication with QuickBooks Online
+- OAuth 2.0 authentication with QuickBooks Online (auto token rotation every 55 min)
 - Retrieve all customers (name, notes, balance)
-- Retrieve all transactions (invoices, payments, expenses, bills)
+- Retrieve all transactions (invoices, payments, expenses, bills, credit memos, journal entries)
 - Look up a specific customer's transactions
 - Export customer transactions as a CSV file
+- **Slack slash command `/client-look-up`** — instant lookup from any channel or DM, no agent conversation needed
+- **One-click email** — send the CSV report to the default recipient directly from the Slack result card
+- **Dedicated bonded agents** — one OpenClaw agent per Slack workspace, each with an isolated session that survives gateway restarts
 
 ## Setup
 
@@ -53,6 +58,67 @@ Then visit:
 
 - **Sandbox:** uses `https://sandbox-quickbooks.api.intuit.com`
 - **Production:** uses `https://quickbooks.api.intuit.com`
+
+---
+
+## v1.3 — Slack Slash Command & Dedicated Agents
+
+### `/client-look-up` Slash Command
+
+v1.3 introduces a standalone Python Slack Bolt app (`client-lookup-slack-app/app.py`) that handles the `/client-look-up` slash command independently of the OpenClaw agent conversation loop.
+
+| | Before (v1.2) | After (v1.3) |
+|---|---|---|
+| Trigger | Chat message to agent | `/client-look-up Lastname, Firstname` |
+| Response time | Agent interpretation + routing | Direct subprocess call — instant ACK |
+| Reliability | Depends on agent context/state | Standalone app, always available |
+| Email prompt | Conversational yes/no reply | One-click **Send Email** button in Slack |
+| Works in any channel/DM | ✅ | ✅ |
+
+**How it works:**
+1. User types `/client-look-up Smith, Jane` in any Slack channel or DM
+2. App ACKs within 3 seconds (Slack requirement)
+3. Runs `scripts/client-lookup.js` in a background thread
+4. Posts a formatted result card with customer name, balance, transaction count, and report path
+5. Shows a **Send Email** button — one click sends the CSV via Himalaya CLI to the configured recipient
+
+**Setup overview:**
+1. Create a Slack app with Socket Mode ON, Interactivity ON, scope `chat:write` + `files:write` + `commands`, and a `/client-look-up` slash command
+2. Copy `client-lookup-slack-app/.env.example` to `.env.<workspace>` and fill in tokens + email config
+3. Create a macOS LaunchAgent plist pointing to `app.py` with `DOTENV_PATH` set — see `skills/client-lookup/references/README.quickbooks-connectors.md` for a full template
+4. Load: `launchctl load ~/Library/LaunchAgents/com.<user>.client-lookup-<workspace>.plist`
+
+A single `app.py` supports multiple Slack workspaces simultaneously — each instance loads a different `.env.<workspace>` file via the `DOTENV_PATH` environment variable.
+
+---
+
+### Dedicated Bonded Agents per Workspace
+
+v1.3 assigns one OpenClaw agent per Slack workspace, permanently bound in `~/.openclaw/openclaw.json`:
+
+| Agent | Workspace | Binding |
+|---|---|---|
+| `main` | Primary workspace | Default fallback — no binding needed |
+| `ea` | Secondary workspace | Explicit route binding in `openclaw.json` |
+
+Bindings are stored in the top-level `bindings` array and **survive gateway restarts automatically**:
+
+```json
+"bindings": [
+  {
+    "type": "route",
+    "agentId": "ea",
+    "match": { "channel": "slack", "accountId": "your-workspace-id" }
+  }
+]
+```
+
+To create a bonded agent:
+```bash
+openclaw agents add ea --workspace ~/.openclaw/workspace --bind "slack:your-workspace-id"
+```
+
+> ⚠️ Set `groupPolicy: "open"` for each workspace account — `"allowlist"` silently drops all channel messages even when the sender is in `allowFrom`.
 
 ---
 
@@ -275,6 +341,7 @@ git status
 
 | Version | Date | Changes |
 |---|---|---|
+| **v1.3** | 2026-03-25 | Standalone Python Slack Bolt app (`client-lookup-slack-app/`) handling `/client-look-up` slash command directly — no agent conversation required. One-click **Send Email** button replaces conversational yes/no prompt. Dedicated bonded OpenClaw agent per Slack workspace with bindings persisted in `openclaw.json` — survive gateway restarts. macOS LaunchAgent plists auto-start and keep-alive one app instance per workspace. Hardcoded absolute paths replaced with env-var-driven `QB_REPORTS_DIR` in scripts. All example data in docs replaced with generic placeholders. Added `.gitignore` covering Node, Python, secrets, and runtime state. |
 | **v1.2** | 2026-03-24 | Remove agent-name and platform-specific references from docs; replace with generic language. Add JournalEntry and CreditMemo to `/customers/:id/transactions` and export endpoint. CSV report updated with `Date`, `Type`, `No.`, `Amount`, `Status` columns matching QB web UI. No-match response now instructs standard name format `Lastname, Givenname`. Email prompt simplified to yes/no with default address pre-filled. Added log rotation to `log-action.js` (1 MB limit, 5 archives). Added `.claude/` to `.gitignore`. |
 | **v1.1** | 2026-03-24 | Dual-port security: port 3000 localhost-only (no token), port 3001 public via Cloudflare tunnel (requires `ADMIN_TOKEN`). Added `requireAdminToken` middleware. |
 | **v1.0** | 2026-03-24 | Initial stable release. OAuth 2.0 with auto token rotation, customer and transaction endpoints, CSV export, Openclaw integration guide, security hardening. |
