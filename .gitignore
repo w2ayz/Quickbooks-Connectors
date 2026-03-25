@@ -31,6 +31,7 @@ logs/
 .DS_Store
 
 # ── Runtime / state ───────────────────────────────────────────────────────────
+.openclaw/
 workspace-state.json
 MEMORY.md
 memory/
