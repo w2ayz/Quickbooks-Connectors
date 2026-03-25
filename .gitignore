@@ -1,28 +1,42 @@
-# Environment / secrets
+# ── Secrets & credentials ─────────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
+*.tokens.json
+.email-config
+*.email-config
+openclaw-service.yaml
+openclaw*.yaml
+.openclaw-env
 
-# Python
+# Cloudflare tunnel credentials — never commit
+*.json
+!package.json
+!package-lock.json
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 .venv/
 
-# Logs
+# ── Output files ──────────────────────────────────────────────────────────────
+*.csv
 logs/
 *.log
 
-# macOS
+# ── macOS ─────────────────────────────────────────────────────────────────────
 .DS_Store
 
-# Runtime / state
+# ── Runtime / state ───────────────────────────────────────────────────────────
 workspace-state.json
 MEMORY.md
 memory/
-*.tokens.json
 .clawhub/
 
-# Scratch / temp
+# ── Scratch / temp ────────────────────────────────────────────────────────────
 tmp/
 *.txt
 *.aiff
