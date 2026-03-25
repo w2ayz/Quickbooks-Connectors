@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 function parseArgs(argv) {
@@ -67,8 +68,9 @@ function rotateIfNeeded(filePath, maxBytes = 1 * 1024 * 1024, maxFiles = 5) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
 
-  const logPath = args.logPath || '/Users/vzeng/Quickbooks/Reports/client-lookup.log';
-  const readablePath = args.readablePath || '/Users/vzeng/Quickbooks/Reports/client-lookup-readable.log';
+  const defaultReportsDir = process.env.QB_REPORTS_DIR || path.join(os.homedir(), 'Quickbooks', 'Reports');
+  const logPath = args.logPath || path.join(defaultReportsDir, 'client-lookup.log');
+  const readablePath = args.readablePath || path.join(defaultReportsDir, 'client-lookup-readable.log');
 
   const entry = {
     timestamp: new Date().toISOString(),

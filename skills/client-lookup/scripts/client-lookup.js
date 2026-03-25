@@ -4,10 +4,11 @@
 
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const QB_BASE = 'http://localhost:3000';
-const REPORTS_DIR = '/Users/vzeng/Quickbooks/Reports';
+const REPORTS_DIR = process.env.QB_REPORTS_DIR || path.join(os.homedir(), 'Quickbooks', 'Reports');
 const LOG_SCRIPT = path.join(__dirname, 'log-action.js');
 
 const searchName = process.argv[2];

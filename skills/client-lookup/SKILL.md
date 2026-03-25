@@ -3,10 +3,11 @@ name: client-lookup
 description: >
   Look up a QuickBooks client by name and generate a CSV report with their account balance and full
   transaction history. ALWAYS use this skill when the user types "Client-look-up" followed by any name,
-  or asks to look up a client/customer in QuickBooks, retrieve customer transactions, export client data
-  to CSV, check QuickBooks auth status, revoke QuickBooks access, or refresh tokens. Also trigger for
-  phrases like "pull up [name]", "get transactions for [name]", "show me [name]'s account",
-  "check QuickBooks connection", "disconnect QuickBooks", or "revoke QuickBooks token".
+  uses the Slack slash command "/client-lookup [name]", or asks to look up a client/customer in
+  QuickBooks, retrieve customer transactions, export client data to CSV, check QuickBooks auth status,
+  revoke QuickBooks access, or refresh tokens. Also trigger for phrases like "pull up [name]",
+  "get transactions for [name]", "show me [name]'s account", "check QuickBooks connection",
+  "disconnect QuickBooks", or "revoke QuickBooks token".
 ---
 
 # Client Lookup Skill
@@ -22,11 +23,11 @@ rotation, status checks, and revocation.
 | Item | Value |
 |---|---|
 | Local server | `http://localhost:3000` |
-| Reports folder | `/Users/vzeng/Quickbooks/Reports/` |
-| Token file | `/Users/vzeng/Quickbooks/.tokens.json` |
-| Action log file (JSONL) | `/Users/vzeng/Quickbooks/Reports/client-lookup.log` |
-| Action log file (readable) | `/Users/vzeng/Quickbooks/Reports/client-lookup-readable.log` |
-| Start server | `cd /Users/vzeng/Quickbooks && node index.js` |
+| Reports folder | `~/Quickbooks/Reports/` |
+| Token file | `~/Quickbooks/.tokens.json` |
+| Action log file (JSONL) | `~/Quickbooks/Reports/client-lookup.log` |
+| Action log file (readable) | `~/Quickbooks/Reports/client-lookup-readable.log` |
+| Start server | `cd ~/Quickbooks && node index.js` |
 
 ---
 
@@ -36,7 +37,7 @@ Only needs to be done **once**. Tokens are persisted to disk and survive server 
 
 **Step 1 — Ensure the server is running:**
 ```bash
-cd /Users/vzeng/Quickbooks && node index.js &
+cd ~/Quickbooks && node index.js &
 ```
 
 **Step 2 — Start OAuth in browser:**
@@ -45,7 +46,7 @@ http://localhost:3000/auth/intuit
 ```
 Or via Cloudflare tunnel (required for Production credentials):
 ```
-https://qb.zeebots.ai/auth/intuit
+https://your-tunnel-url/auth/intuit
 ```
 
 **Step 3 — Sign in to QuickBooks** in the browser and authorize the app.
@@ -166,12 +167,17 @@ http://localhost:3000/auth/intuit
 ## 6. Client Lookup — CSV Report
 
 ### Trigger
-User types: `Client-look-up <Customer Name>`
+User types `Client-look-up <Customer Name>` **or** uses the Slack slash command `/client-lookup <Customer Name>`.
+
+When a slash command arrives, the message will look like:
+`/client-lookup Wang, Xi` — treat the text after `/client-lookup` as the customer name and proceed with the lookup steps below.
 
 **Examples:**
-- `Client-look-up Kookies by Kathy`
-- `Client-look-up LI, Kuang`
-- `Client-look-up ZHOU, Cuiping`
+- `Client-look-up Smith, Jane`
+- `Client-look-up JONES, Robert`
+- `Client-look-up Acme Services`
+- `/client-look-up Smith, Jane`
+- `/client-look-up JONES, Robert`
 
 ### Steps
 
@@ -188,32 +194,32 @@ curl -s --max-time 3 http://localhost:3000/auth/status
   If refresh fails, tell user: `⚠️ QuickBooks token expired. Please re-authenticate at http://localhost:3000/auth/intuit` and stop.
 - If the curl **fails** (exit code 7, timeout, or connection refused) → server is not running. Start it:
   ```bash
-  cd /Users/vzeng/Quickbooks && node index.js &
+  cd ~/Quickbooks && node index.js &
   sleep 3
   curl -s http://localhost:3000/auth/intuit/refresh
   ```
   Then re-check status. If server still doesn't respond after starting, tell user:
-  `⚠️ QuickBooks server failed to start. Please check /Users/vzeng/Quickbooks/index.js manually.` and stop.
+  `⚠️ QuickBooks server failed to start. Please check ~/Quickbooks/index.js manually.` and stop.
 
 > **Never silently fail.** Always report the server/auth state to the user before attempting the lookup.
 
 **Step 1 — Run the lookup script** (handles customer search, transaction fetch, and CSV generation in one command):
 ```bash
-node /Users/vzeng/.openclaw/workspace/skills/client-lookup/scripts/client-lookup.js "<CUSTOMER_NAME>"
+node /path/to/skills/client-lookup/scripts/client-lookup.js "<CUSTOMER_NAME>"
 ```
 
 The script outputs a single JSON line on success:
 ```json
 {
-  "customer": "Zhang, Tian",
-  "customer_id": "249",
-  "notes": "张甜",
+  "customer": "Smith, Jane",
+  "customer_id": "100",
+  "notes": "",
   "balance": 0,
   "balance_flag": "ZERO",
   "transaction_count": 8,
   "unpaid_invoices": 0,
-  "last_activity": "2026-03-18",
-  "report_path": "/Users/vzeng/Quickbooks/Reports/Zhang__Tian_report.csv",
+  "last_activity": "2026-01-15",
+  "report_path": "~/Quickbooks/Reports/Smith__Jane_report.csv",
   "multiple_matches": null
 }
 ```
@@ -221,7 +227,7 @@ The script outputs a single JSON line on success:
 Exit codes:
 - `0` = success, JSON printed to stdout
 - `2` = not authenticated → run manual refresh (Step 0), then retry once; if still failing direct user to `http://localhost:3000/auth/intuit`
-- `4` = no exact match found → respond: "No exact match found for **'<query>'**. Please use the standard format: **Lastname, Givenname** (e.g. `Li, Qian`). Would you like to search again?" Do not offer to list all customers.
+- `4` = no exact match found → respond: "No exact match found for **'<query>'**. Please use the standard format: **Lastname, Givenname** (e.g. `Smith, Jane`). Would you like to search again?" Do not offer to list all customers.
 - `99` = unexpected error → show the raw error output to the user, do not silently swallow it
 
 **Step 2 — Post a summary to Slack (#quickbooks):**
@@ -290,18 +296,18 @@ printf 'From: ${EMAIL_FROM}\nTo: ${DEFAULT_EMAIL_TO}\nSubject: QuickBooks Report
 
 **Step 5 — Append an action log entry with timestamp:**
 For every `Client-look-up` request, append one JSONL line to:
-`/Users/vzeng/Quickbooks/Reports/client-lookup.log`
+`~/Quickbooks/Reports/client-lookup.log`
 
 Also append a human-readable entry to:
-`/Users/vzeng/Quickbooks/Reports/client-lookup-readable.log`
+`~/Quickbooks/Reports/client-lookup-readable.log`
 
 Use helper script:
 ```bash
-node /Users/vzeng/.openclaw/workspace/skills/client-lookup/scripts/log-action.js \
+node /path/to/skills/client-lookup/scripts/log-action.js \
   --query "<CUSTOMER_NAME>" \
   --customer_id "<ID>" \
   --customer_name "<MATCHED_NAME>" \
-  --report_path "/Users/vzeng/Quickbooks/Reports/<SafeName>_report.csv" \
+  --report_path "~/Quickbooks/Reports/<SafeName>_report.csv" \
   --status success \
   --email_prompted true \
   --email_decision pending \
@@ -325,7 +331,7 @@ Minimum fields:
 
 Example:
 ```json
-{"timestamp":"2026-03-22T21:30:00.000Z","action":"client_lookup","query":"Sun, Chao","customer_id":"695","customer_name":"Sun, Chao","report_path":"/Users/vzeng/Quickbooks/Reports/Sun_Chao_report.csv","status":"success","email_prompted":true,"email_decision":"pending","email_to":"","notes":"Report generated; waiting for email instructions."}
+{"timestamp":"2026-01-15T10:00:00.000Z","action":"client_lookup","query":"Smith, Jane","customer_id":"100","customer_name":"Smith, Jane","report_path":"~/Quickbooks/Reports/Smith__Jane_report.csv","status":"success","email_prompted":true,"email_decision":"pending","email_to":"","notes":"Report generated; waiting for email instructions."}
 ```
 
 ---
@@ -337,5 +343,5 @@ Example:
 | `Not authenticated` | No tokens / server restarted without token file | Re-run Initial OAuth (Section 1) |
 | `NO_MATCH` | Customer name not found | Reply: "No exact match found. Standard format: **Lastname, Givenname**" |
 | `invalid_grant` | Refresh token expired or token file was deleted | Re-run Initial OAuth |
-| Server not responding | `node index.js` not running | `cd /Users/vzeng/Quickbooks && node index.js &` |
+| Server not responding | `node index.js` not running | `cd ~/Quickbooks && node index.js &` |
 | Multiple matches | Search is ambiguous | Show all matches; ask user to confirm |

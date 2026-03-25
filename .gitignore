@@ -1,0 +1,36 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Logs
+logs/
+*.log
+
+# macOS
+.DS_Store
+
+# Runtime / state
+workspace-state.json
+MEMORY.md
+memory/
+*.tokens.json
+.clawhub/
+
+# Scratch / temp
+tmp/
+*.txt
+*.aiff
+*.m4a
+*.png
+*.pdf
+*.jpg
+openclaw.updated.json
+
+# LaunchAgent plists (contain real local paths — manage locally)
+# ~/Library/LaunchAgents/
