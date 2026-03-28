@@ -47,6 +47,121 @@ The binding is stored in the top-level `bindings` array in `~/.openclaw/openclaw
 
 ---
 
+## Architecture Diagram
+
+### Full Data Flow — `/client-look-up` Slash Command
+
+```mermaid
+flowchart TD
+    A([👤 Slack User\n/client-look-up Lastname, Firstname]) --> B
+
+    subgraph APP ["⚙️ app.py — Slack Bolt App (Socket Mode)"]
+        B[handle_client_lookup\nExtract name · channel_id · user_id] --> C
+        C[ack ✅\nRespond: 🔍 Looking up...] --> D
+        D[Spawn background thread\npost_result]
+    end
+
+    D --> E
+
+    subgraph SCRIPT ["📦 client-lookup.js (Node.js subprocess)"]
+        E[Check QB auth\nGET /auth/status] -->|not authenticated| X2[exit 2]
+        E -->|authenticated| F
+        F[Fetch all customers\nGET /customers] -->|error| X3[exit 3]
+        F -->|ok| G
+        G[Filter matches\nname or companyName contains search] -->|no match| X4[exit 4]
+        G -->|match found| H
+        H[Select best match\nexact → partial fallback]
+        H --> I[Fetch transactions\nGET /customers/:id/transactions]
+        I --> J[Write CSV report\nReports/Name_report.csv]
+        J --> K[Calculate metrics\nunpaid invoices · last activity · balance flag]
+        K --> L[Output JSON to stdout\nexit 0]
+    end
+
+    subgraph QB ["🗄️ QuickBooks Server (localhost:3000)"]
+        QBA[/auth/status]
+        QBC[/customers]
+        QBT[/customers/:id/transactions]
+    end
+
+    E -->|GET| QBA
+    F -->|GET| QBC
+    I -->|GET| QBT
+
+    subgraph ERRORS ["❌ Error Responses → Slack"]
+        X2 --> ERR[app.py posts\nerror message\nto Slack channel]
+        X3 --> ERR
+        X4 --> ERR
+    end
+
+    L -->|JSON stdout| M
+
+    subgraph FORMAT ["🎨 app.py — Format Result"]
+        M[Parse JSON] --> N
+        N[Format balance\n✅ ZERO · 🔴 BALANCE_DUE · ⚠️ CREDIT] --> O
+        O[Build Slack Block Kit\nHeader · Fields · Report path] --> P
+        P{DEFAULT_EMAIL_TO\nconfigured?}
+        P -->|yes| Q[Add Send Email button\nvalue: customer + report_path JSON]
+        P -->|no| R[Post result to Slack\nvisible to channel]
+        Q --> R
+    end
+
+    R --> S([💬 Slack Channel\nResult card visible to all])
+
+    S -->|User clicks\nSend Email button| T
+
+    subgraph EMAIL ["📧 app.py — Email Handler"]
+        T[handle_send_email\nDecode button payload] --> U
+        U[Validate report\nfile exists on disk] -->|missing| V[❌ Respond error]
+        U -->|exists| W[Build himalaya template\nFrom · To · Subject · CSV attachment]
+        W --> himalaya
+        himalaya[himalaya template send\n-a account_name] -->|rc=0| Y[✅ Report sent to recipient]
+        himalaya -->|rc≠0| Z[❌ Email failed + stderr]
+    end
+
+    Y --> S2([💬 Slack Channel\nStatus message])
+    Z --> S2
+
+    subgraph LOGS ["📋 Logging"]
+        L2[app.py RotatingFileHandler\nlogs/client-lookup.log\n5 MB · 5 archives]
+        L3[CSV Reports\nReports/Name_report.csv]
+    end
+
+    D -.->|logs invocation| L2
+    L -.->|writes| L3
+    W -.->|logs email request| L2
+    himalaya -.->|logs result| L2
+```
+
+---
+
+### Component Responsibilities
+
+| Component | Role | Language |
+|---|---|---|
+| **Slack** | Delivers slash command payload; renders Block Kit cards | — |
+| **app.py** | ACKs command, orchestrates flow, formats results, handles email button | Python (Slack Bolt) |
+| **client-lookup.js** | Authenticates with QB, fetches & matches customers, exports CSV, returns JSON | Node.js |
+| **QuickBooks Server** | REST API over OAuth 2.0 — provides customer and transaction data | Node.js (Express) |
+| **himalaya** | CLI email client — sends CSV report as attachment via SMTP | Rust CLI |
+
+---
+
+### Data Passed Between Components
+
+| From | To | Data |
+|---|---|---|
+| Slack | app.py | `command.text` (name), `channel_id`, `user_id` |
+| app.py | client-lookup.js | Customer name string (argv[2]) |
+| client-lookup.js | QuickBooks Server | HTTP GET requests |
+| QuickBooks Server | client-lookup.js | JSON: customers[], transactions[], auth status |
+| client-lookup.js | app.py | JSON via stdout: customer, balance, counts, report_path |
+| app.py | Slack | Block Kit message with formatted result + email button |
+| Slack button | app.py | JSON payload: `{customer, report_path}` |
+| app.py | himalaya | Email template string via stdin |
+| himalaya | SMTP server | Email with CSV attachment |
+
+---
+
 ## Features
 
 ## Setup
