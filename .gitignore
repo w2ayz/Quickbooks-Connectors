@@ -51,6 +51,7 @@ tmp/
 *.aiff
 *.m4a
 *.png
+!Slack\ User\ Client\ Lookup-2026-03-28-233341.png
 *.pdf
 *.jpg
 openclaw.updated.json

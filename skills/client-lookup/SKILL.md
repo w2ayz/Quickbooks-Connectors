@@ -17,6 +17,10 @@ This skill connects to a local QuickBooks Express server (`http://localhost:3000
 generate CSV reports, and manage the OAuth 2.0 connection lifecycle — including initial auth, auto token
 rotation, status checks, and revocation.
 
+## Flow Diagram
+
+![Slack Client Lookup Flow](../../Slack%20User%20Client%20Lookup-2026-03-28-233341.png)
+
 ---
 
 ## Server Info

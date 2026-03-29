@@ -4,6 +4,10 @@ A lightweight Node.js + Express server that connects to the QuickBooks Online AP
 
 **Current version: 1.3**
 
+## Architecture
+
+![Slack Client Lookup Flow](Slack%20User%20Client%20Lookup-2026-03-28-233341.png)
+
 ## Features
 
 - OAuth 2.0 authentication with QuickBooks Online (auto token rotation every 55 min)
