@@ -289,7 +289,7 @@ Ask exactly once:
 > **Config (set once in your environment or update these placeholders):**
 > - `DEFAULT_EMAIL_TO` = recipient's default email address
 > - `EMAIL_FROM` = sender email address tied to the himalaya account
-> - `HIMALAYA_ACCOUNT` = himalaya account name (e.g. `everalpha`)
+> - `HIMALAYA_ACCOUNT` = himalaya account name (e.g. `EA`)
 
 **Email send command** — use `himalaya template send` (NOT `message send`) with MML syntax to attach the CSV file:
 ```bash

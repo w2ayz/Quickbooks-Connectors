@@ -41,7 +41,7 @@ Before v1.3, a single OpenClaw agent handled multiple Slack workspaces from a sh
 | Agent | Workspace | Bound via |
 |---|---|---|
 | `main` | openclaw-studio (default) | fallback — no binding needed |
-| `ea` | ever-alpha | explicit route binding in `openclaw.json` |
+| `ea` | EA | explicit route binding in `openclaw.json` |
 
 The binding is stored in the top-level `bindings` array in `~/.openclaw/openclaw.json` and **survives gateway restarts automatically** — it does not need to be re-applied after a reboot.
 
@@ -506,7 +506,7 @@ OpenClaw stores routing rules in the top-level `bindings` array in `~/.openclaw/
   {
     "type": "route",
     "agentId": "ea",
-    "match": { "channel": "slack", "accountId": "ever-alpha" }
+    "match": { "channel": "slack", "accountId": "EA" }
   }
 ]
 ```
@@ -517,7 +517,7 @@ The `main` agent handles all other workspaces by default (no binding needed).
 
 **Step 1 — Create the agent:**
 ```bash
-openclaw agents add ea --workspace ~/.openclaw/workspace --bind "slack:ever-alpha"
+openclaw agents add ea --workspace ~/.openclaw/workspace --bind "slack:EA"
 ```
 
 This creates the agent AND writes the binding to `openclaw.json` in one step.
@@ -537,7 +537,7 @@ Each Slack workspace must be declared as a named account:
 "channels": {
   "slack": {
     "accounts": {
-      "ever-alpha": {
+      "EA": {
         "botToken": "xoxb-REPLACE_ME",
         "appToken": "xapp-REPLACE_ME",
         "groupPolicy": "open",
@@ -566,7 +566,7 @@ After any gateway restart, verify both agents are connected:
 ```bash
 openclaw agents list
 # main  → running, connected to openclaw-studio
-# ea    → running, connected to ever-alpha
+# ea    → running, connected to EA
 ```
 
 #### Important: `groupPolicy` must be `"open"`
@@ -620,7 +620,7 @@ If `agents.main` or `agents.ea` keys appear with empty or incomplete allowlists,
 |---|---|
 | 2026-03-25 | **v1.3** — Added `/client-look-up` Slack slash command via dedicated Python Slack Bolt app |
 | 2026-03-25 | **v1.3** — One-click **Send Email** button in Slack replaces conversational yes/no prompt |
-| 2026-03-25 | **v1.3** — Dedicated bonded agents per workspace (`main` → openclaw-studio, `ea` → ever-alpha) |
+| 2026-03-25 | **v1.3** — Dedicated bonded agents per workspace (`main` → openclaw-studio, `ea` → EA) |
 | 2026-03-25 | **v1.3** — Bindings persisted in `openclaw.json` — survive gateway restarts automatically |
 | 2026-03-25 | **v1.3** — Two LaunchAgent plists auto-start and keep-alive one app instance per workspace |
 | 2026-03-25 | **v1.3** — Documented `groupPolicy: "open"` requirement and exec-approvals wildcard gotcha |

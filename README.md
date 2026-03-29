@@ -2,7 +2,7 @@
 
 A lightweight Node.js + Express server that connects to the QuickBooks Online API via OAuth 2.0 to retrieve customers and transactions — integrated with Slack and OpenClaw for instant lookups, CSV exports, and email delivery.
 
-**Current version: 1.3**
+**Current version: 1.4**
 
 ## Architecture
 
@@ -345,6 +345,7 @@ git status
 
 | Version | Date | Changes |
 |---|---|---|
+| **v1.4** | 2026-03-29 | All slash command responses now visible to the full channel (`response_type: in_channel`) — previously only the result card was public. Caller identity (`@username`) now prepended to every message and shown as a context block on the result card. **Send Email** button replaced with a recipient picker modal — click the button to choose from a pre-approved address list (`APPROVED_EMAILS` env var, comma-separated) rather than sending to a hardcoded default. |
 | **v1.3** | 2026-03-25 | Standalone Python Slack Bolt app (`client-lookup-slack-app/`) handling `/client-look-up` slash command directly — no agent conversation required. One-click **Send Email** button replaces conversational yes/no prompt. Dedicated bonded OpenClaw agent per Slack workspace with bindings persisted in `openclaw.json` — survive gateway restarts. macOS LaunchAgent plists auto-start and keep-alive one app instance per workspace. Hardcoded absolute paths replaced with env-var-driven `QB_REPORTS_DIR` in scripts. All example data in docs replaced with generic placeholders. Added `.gitignore` covering Node, Python, secrets, and runtime state. |
 | **v1.2** | 2026-03-24 | Remove agent-name and platform-specific references from docs; replace with generic language. Add JournalEntry and CreditMemo to `/customers/:id/transactions` and export endpoint. CSV report updated with `Date`, `Type`, `No.`, `Amount`, `Status` columns matching QB web UI. No-match response now instructs standard name format `Lastname, Givenname`. Email prompt simplified to yes/no with default address pre-filled. Added log rotation to `log-action.js` (1 MB limit, 5 archives). Added `.claude/` to `.gitignore`. |
 | **v1.1** | 2026-03-24 | Dual-port security: port 3000 localhost-only (no token), port 3001 public via Cloudflare tunnel (requires `ADMIN_TOKEN`). Added `requireAdminToken` middleware. |
